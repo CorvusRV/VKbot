@@ -106,4 +106,7 @@ class BotInterface:
 if __name__ == '__main__':
     bot = BotInterface(comunity_token, acces_token)
     bot.event_handler()
+<<<<<<< HEAD
 
+=======
+>>>>>>> d202a7d289feec774e946ab941b925af8c4e4840
