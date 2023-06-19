@@ -4,12 +4,14 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 
 from config import comunity_token, acces_token
 from core import VkTools
+from db_logic import DBLogic
 
 
 class BotInterface:
     def __init__(self, comunity_token, acces_token):
         self.interface = vk_api.VkApi(token=comunity_token)
         self.api = VkTools(acces_token)
+        self.db_logic = DBLogic()  # управление базой данных
         self.params = None
         self.search_terms = None
 
@@ -19,6 +21,16 @@ class BotInterface:
                                'message': text,
                                'random_id': 0}
                               )
+
+    def request_for_data_user(self):
+        users = self.api.serch_users(self.search_terms)
+        user_name = None
+        while user_name is None:
+            user = self.api.enumeration_found_users(users)
+            if not self.db_logic.getting_verified_id(self.params['id'], user['id']):
+                user_id, user_name, attachment = self.api.data_acquisition_user(user)
+                self.db_logic.viewing(self.params['id'], user_id)
+        return user_id, user_name, attachment
 
     def event_handler(self):
         longpoll = VkLongPoll(self.interface)
@@ -78,22 +90,22 @@ class BotInterface:
                 elif command == 'поиск' and self.params is not None:
                     if self.search_terms is None:
                         self.search_terms = self.api.formation_search_terms(self.params)
-                    users = self.api.serch_users(self.search_terms)
-                    user_name = None
-                    while user_name is None:
-                        user_name, attachment = self.api.enumeration_found_users(users)
+                    user_id, user_name, attachment = self.request_for_data_user()
                     self.message_send(event.user_id,
-                                      f"{attachment}\nВстречайте {user_name}")
-
+                                      f"Встречайте {user_name}\nhttps://vk.com/id{user_id}\n\n{attachment}")
                 elif command == 'следующий':
-                    user_name = None
-                    while user_name is None:
-                        user_name, attachment = self.api.enumeration_found_users(users)
+                    user_id, user_name, attachment = self.request_for_data_user()
                     self.message_send(event.user_id,
-                                      f"{attachment}\nВстречайте {user_name}")
-                elif command == 'сбосить данные поиска':  # формирует уловия поиска, относительно параметров клиента
+                                      f"Встречайте {user_name}\nhttps://vk.com/id{user_id}\n\n{attachment}")
+                elif command == 'сбросить данные поиска':  # формирует уловия поиска, относительно параметров клиента
                     self.search_terms = self.api.formation_search_terms(self.params)
-
+                elif command == 'просмотренные':
+                    verified_all_id = self.db_logic.getting_verified_all_id(self.params['id'])
+                    self.message_send(event.user_id, f'{verified_all_id}')
+                elif re.search(r'проверить - \d', command):
+                    user_id = command.split(' - ')[1]
+                    get = self.db_logic.getting_verified_id(self.params['id'], user_id)
+                    self.message_send(event.user_id, f'пользователь {user_id} проверяется {get}')
                 elif command == 'помощь':  # данная команда выводит все команды
                     self.message_send(event.user_id, f'Извини, команда не работает, она должна выводить подсказку по командам')
                 elif command == 'пока':

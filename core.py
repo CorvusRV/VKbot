@@ -1,6 +1,7 @@
 import vk_api
 from datetime import datetime
 
+
 from config import acces_token
 
 class VkTools:
@@ -21,6 +22,9 @@ class VkTools:
         return user_info
 
     def checking_client_info(self, params):  # работает, но нужно подумать над сообщениями
+        """
+        уточнение информации о пользователе
+        """
         info = []
         if params.get('bdate') is None or len(params['bdate'].split('.')) < 3:
             info.append('Уточните дату рождения, записав ее в формате ДД.ММ.ГГГГ.')
@@ -34,6 +38,9 @@ class VkTools:
         return None
 
     def formation_search_terms(self, params):
+        """
+        формирование условий поиска
+        """
         age = datetime.now().year - int(params['bdate'].split('.')[2])  # исправить, так как будет выдавать ошибку
         search_terms = {'count': 1000,
                         'offset': 0,
@@ -50,6 +57,9 @@ class VkTools:
         return users['items'] if users.get('items') is not None else []
 
     def get_photos(self, photos):
+        """
+        получение фотографий пользователя из профеля
+        """
         photos = sorted(photos, key=lambda x: x['likes']['count']+x['comments']['count'], reverse=True)[0:3]
         attachment = []
         for photo in photos:
@@ -59,6 +69,7 @@ class VkTools:
 
     def enumeration_found_users(self, users):
         user = users.pop()
+        return user
         if user['can_access_closed']:
             get_photos = self.api.method('photos.get',
                                      {'owner_id': user['id'],
@@ -70,8 +81,24 @@ class VkTools:
                 user_name = f"{user['first_name']} {user['last_name']}"
                 attachment = self.get_photos(get_photos['items'])
                 print(user_name, attachment)
-                return user_name, attachment
-        return None, None
+                return user['id'], user_name, attachment
+        return user['id'], None, None
+
+    def data_acquisition_user(self, user):
+        if user['can_access_closed']:
+            get_photos = self.api.method('photos.get',
+                                     {'owner_id': user['id'],
+                                      'album_id': 'profile',
+                                      'extended': 1
+                                      }
+                                     )
+            if get_photos['count'] > 0:
+                user_name = f"{user['first_name']} {user['last_name']}"
+                attachment = self.get_photos(get_photos['items'])
+                print(user_name, attachment)
+                return user['id'], user_name, attachment
+        return user['id'], None, None
+
 
     def city_id(self, name):
         name = name.split(', ')
