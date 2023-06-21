@@ -70,19 +70,6 @@ class VkTools:
     def enumeration_found_users(self, users):
         user = users.pop()
         return user
-        if user['can_access_closed']:
-            get_photos = self.api.method('photos.get',
-                                     {'owner_id': user['id'],
-                                      'album_id': 'profile',
-                                      'extended': 1
-                                      }
-                                     )
-            if get_photos['count'] > 0:
-                user_name = f"{user['first_name']} {user['last_name']}"
-                attachment = self.get_photos(get_photos['items'])
-                print(user_name, attachment)
-                return user['id'], user_name, attachment
-        return user['id'], None, None
 
     def data_acquisition_user(self, user):
         if user['can_access_closed']:
@@ -98,7 +85,6 @@ class VkTools:
                 print(user_name, attachment)
                 return user['id'], user_name, attachment
         return user['id'], None, None
-
 
     def city_id(self, name):
         name = name.split(', ')

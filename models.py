@@ -5,12 +5,22 @@ from sqlalchemy.orm import Session
 
 Base = declarative_base()
 
+class ProfileInfo(Base):
+    __tablename__ = 'profileinfo'
+
+    profile_id = sq.Column(sq.Integer, primary_key=True)
+    profile_name = sq.Column(sq.String(length=80), unique=False)
+    profile_bdate = sq.Column(sq.String(length=80), unique=False)
+    profile_sex = sq.Column(sq.Integer)
+    profile_city = sq.Column(sq.Integer)
+
 
 class Viewed(Base):
     __tablename__ = 'viewed'
 
     profile_id = sq.Column(sq.Integer, primary_key=True)
     worksheet_id = sq.Column(sq.Integer, primary_key=True)
+
 
     def __str__(self):
         return f"{self.profile_id}: {self.worksheet_id}"

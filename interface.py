@@ -40,7 +40,16 @@ class BotInterface:
                 command = event.text.lower()
 
                 if command == 'привет':  # стартовая команда
-                    self.params = self.api.get_profile_info(event.user_id)
+                    params = self.db_logic.getting_profile_info(event.user_id)
+                    if params is None:
+                        self.params = self.api.get_profile_info(event.user_id)
+                        self.db_logic.recording_profile_info(self.params)  # внесение данных в db, для дальнейшей работы
+                    else:
+                        self.params = {'name': params.profile_name,
+                                       'id': params.profile_id,
+                                       'bdate': params.profile_bdate,
+                                       'sex': params.profile_sex,
+                                       'city': params.profile_city}
                     self.message_send(event.user_id, f'Здравствуй {self.params["name"]}')
                     client_info = self.api.checking_client_info(self.params)
                     if client_info:
@@ -57,14 +66,17 @@ class BotInterface:
                 elif re.search(r'дата рождения - \d\d.\d\d.\d{4}', command) and self.params is not None:
                     bdate = command.split()[3]
                     self.params['bdate'] = bdate
+                    self.db_logic.update_profile_info(self.params['id'], 'profile_bdate', self.params['bdate'])
                     self.message_send(event.user_id, f'Дата рождения {bdate} принята')
                 elif re.search(r'пол - [12]{1}', command) and self.params is not None:  # воспринимает 1,2,12,21 исправить
                     sex = command.split()[2]
                     self.params['sex'] = sex
+                    self.db_logic.update_profile_info(self.params['id'], 'profile_sex', self.params['sex'])
                     self.message_send(event.user_id, f'Пол принят')
                 elif re.search(r'город - \w', command) and self.params is not None:  # воспринимает 1,2,12,21 исправить
                     name = command.split(' ', 2)[2]
                     name, self.params['city'] = self.api.city_id(name)
+                    self.db_logic.update_profile_info(self.params['id'], 'profile_city', self.params['city'])
                     self.message_send(event.user_id, f"Город {name}, id = {self.params['city']}")
                 # команды для поиска людей и проверки условий поиска
                 elif command == 'условия поиска' and self.params is not None:  # проверка условий поиска
