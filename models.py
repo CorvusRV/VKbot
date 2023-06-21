@@ -20,6 +20,7 @@ class Viewed(Base):
 
     profile_id = sq.Column(sq.Integer, primary_key=True)
     worksheet_id = sq.Column(sq.Integer, primary_key=True)
+    like = sq.Column(sq.Boolean, default=False)
 
 
     def __str__(self):

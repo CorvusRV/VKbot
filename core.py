@@ -65,6 +65,7 @@ class VkTools:
         for photo in photos:
             photoss = sorted(photo['sizes'], key=lambda x: (x['height'], x['width'], x['type']), reverse=True)
             attachment.append(photoss[0]['url'])
+        attachment = []  # для тестов
         return ', '.join(attachment)
 
     def enumeration_found_users(self, users):

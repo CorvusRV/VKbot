@@ -24,20 +24,31 @@ class DBLogic:
         self.session.add(data)
         self.session.commit()
 
-    def getting_verified_all_id(self, profile_id):
+    def getting_list_liked_users_id(self, profile_id):
         """
-        выводит список всех проверенных id данным пользователем
+        выводит список id всех понравившихся партнеров
         """
-        verified_all_id = [k[0] for k in self.session.query(Viewed.worksheet_id).filter(Viewed.profile_id == str(profile_id)).all()]
-        return verified_all_id
+        list_liked_users_id = [k[0] for k in self.session.query(Viewed.worksheet_id).filter(
+            Viewed.profile_id == str(profile_id), Viewed.like == str(1)).all()]
+        return list_liked_users_id
 
     def getting_verified_id(self, profile_id, user_id):
         """
-        проверяет, просматривал ли данный пользователь этого человека:
+        проверяет, просматривал ли данный пользователь этого человека
         """
         answer = self.session.query(Viewed).filter(Viewed.profile_id == str(profile_id),
                                                    Viewed.worksheet_id == str(user_id)).first()
         return bool(answer)
+
+    def mark_user_like(self, profile_id, worksheet_id):
+        """
+        отмечает человека, как понравившегося
+        """
+        print(profile_id, worksheet_id)
+        user_like = self.session.query(Viewed).get([profile_id, worksheet_id])
+        user_like.like = True
+        self.session.add(user_like)
+        self.session.commit()
 
     # ProfileInfo
     def recording_profile_info(self, params):
