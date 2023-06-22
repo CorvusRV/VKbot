@@ -48,5 +48,5 @@ class DBLogic:
         user_like = self.session.query(Viewed).get([profile_id, worksheet_id])
         user_like.like = True
         self.session.add(user_like)
-        self.session.commit()go
+        self.session.commit()
 

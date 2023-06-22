@@ -49,16 +49,8 @@ class BotInterface:
                 command = event.text.lower()
 
                 if command == 'привет':  # стартовая команда
-                    params = self.db_logic.getting_profile_info(event.user_id)
-                    if params is None:
+                    if self.params is None:
                         self.params = self.api.get_profile_info(event.user_id)
-                        self.db_logic.recording_profile_info(self.params)  # внесение данных в db, для дальнейшей работы
-                    else:
-                        self.params = {'name': params.profile_name,
-                                       'id': params.profile_id,
-                                       'bdate': params.profile_bdate,
-                                       'sex': params.profile_sex,
-                                       'city': params.profile_city}
                     self.message_send(event.user_id, f'Здравствуй {self.params["name"]}')
                     client_info = self.api.checking_client_info(self.params)
                     if client_info:
