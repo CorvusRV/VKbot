@@ -48,39 +48,5 @@ class DBLogic:
         user_like = self.session.query(Viewed).get([profile_id, worksheet_id])
         user_like.like = True
         self.session.add(user_like)
-        self.session.commit()
-
-    # ProfileInfo
-    def recording_profile_info(self, params):
-        """
-        заносит данных пользователя в db
-        """
-        data = ProfileInfo(profile_id=params['id'],
-                           profile_name=params['name'],
-                           profile_bdate=params['bdate'],
-                           profile_sex=params['sex'],
-                           profile_city=params['city'])
-        self.session.add(data)
-        self.session.commit()
-
-    def getting_profile_info(self, profile_id):
-        """
-        получение данных пользователя
-        """
-        profile_info = self.session.query(ProfileInfo).filter(ProfileInfo.profile_id == str(profile_id)).first()
-        return profile_info
-
-    def update_profile_info(self, id, parameter, value):
-        """
-        изменение персональных данных
-        """
-        up_pi = self.session.query(ProfileInfo).get(id)
-        if parameter == 'profile_bdate':
-            up_pi.profile_bdate = value
-        elif parameter == 'profile_sex':
-            up_pi.profile_sex = value
-        elif parameter == 'profile_city':
-            up_pi.profile_city = value
-        self.session.add(up_pi)
-        self.session.commit()
+        self.session.commit()go
 
