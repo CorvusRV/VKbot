@@ -19,5 +19,5 @@ class Viewed(Base):
 
 
 def create_tables(engine):
-    Base.metadata.drop_all(engine)  # удаление всех существующих таблиц
+    #Base.metadata.drop_all(engine)  # удаление всех существующих таблиц
     Base.metadata.create_all(engine)  # создание всех существующих таблиц

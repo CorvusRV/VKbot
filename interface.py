@@ -23,7 +23,7 @@ class BotInterface:
                                'random_id': 0}
                               )
 
-    def request_for_data_user(self):
+    def request_for_data_user(self):  # переделать цикл
         users = self.api.serch_users(self.search_terms)
         user_name = None
         while user_name is None:
@@ -48,37 +48,53 @@ class BotInterface:
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                 command = event.text.lower()
 
-                if command == 'привет':  # стартовая команда
+                if command in ('привет', 'старт'):  # стартовая команда
                     if self.params is None:
                         self.params = self.api.get_profile_info(event.user_id)
                     self.message_send(event.user_id, f'Здравствуй {self.params["name"]}')
-                    client_info = self.api.checking_client_info(self.params)
-                    if client_info:
-                        self.message_send(event.user_id, client_info)
-
-                # команды для проверки личных данных и их изменения
+                    # проверка данных пользователя
+                    if self.params['bdate'] is None:
+                        self.message_send(event.user_id, 'Введите дату рождения в формате ДД.ММ.ГГГГ')
+                        for event in longpoll.listen():
+                            if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+                                command = event.text.lower()
+                                if re.search(r'\d\d.\d\d.\d{4}', command):
+                                    bdate = command
+                                    if bdate == '11.11.1111':
+                                        self.params['dbase'] = bdate
+                                        self.message_send(event.user_id, 'Дата рождения принята')
+                                        break
+                                self.message_send(event.user_id, 'Попробуйте еще раз')
+                    if self.params['sex'] is None:
+                        self.message_send(event.user_id, 'Введите свой пол м/ж')
+                        for event in longpoll.listen():
+                            if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+                                sex = event.text.lower()
+                                if sex == 'м' or sex == 'ж':
+                                    self.params['sex'] = 1 if sex == 'ж' else 2
+                                    self.message_send(event.user_id, 'Пол принят')
+                                    break
+                                self.message_send(event.user_id, 'Попробуйте еще раз')
+                    if self.params['city'] is None:
+                        self.message_send(event.user_id, 'Введите название вашего города проживания.\n'
+                                                         'Через занятую можно уточнить область.')
+                        for event in longpoll.listen():
+                            if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+                                city = event.text.lower()
+                                city_name, city_id = self.api.city_id(city)
+                                if city_id is not None:
+                                    self.params['city_id'] = city_id
+                                    self.params['city_name'] = city_name.capitalize()
+                                    self.message_send(event.user_id, f"Город {self.params['city_name']} принят")
+                                    break
+                                self.message_send(event.user_id, 'Попробуйте еще раз')
+                # команды для проверки личных данных
                 elif command == 'мои данные' and self.params is not None:  # проверка данных клиента
-                    self.message_send(event.user_id, f"name: {self.params.get('name')}\n"
-                                                     f"id: {self.params.get('id')}\n"
-                                                     f"bdate: {self.params.get('bdate')}\n"
-                                                     f"sex: {self.params.get('sex')}\n"
-                                                     f"city_id: {self.params.get('city')}")  # переделать вывод с названием города
-                # команды для изменений личных данных, которых изначально может не оказаться
-                elif re.search(r'моя дата рождения - \d\d.\d\d.\d{4}', command) and self.params is not None:
-                    bdate = command.split(' - ')[1]
-                    self.params['bdate'] = bdate
-                    self.db_logic.update_profile_info(self.params['id'], 'profile_bdate', self.params['bdate'])
-                    self.message_send(event.user_id, f'Дата рождения {bdate} принята')
-                elif re.search(r'мой пол - [12]{1}', command) and self.params is not None:  # воспринимает 1,2,12,21 исправить
-                    sex = command.split()[2]
-                    self.params['sex'] = sex
-                    self.db_logic.update_profile_info(self.params['id'], 'profile_sex', self.params['sex'])
-                    self.message_send(event.user_id, f'Пол принят')
-                elif re.search(r'мой город - \w', command) and self.params is not None:  # воспринимает 1,2,12,21 исправить
-                    name = command.split(' ', 2)[2]
-                    name, self.params['city'] = self.api.city_id(name)
-                    self.db_logic.update_profile_info(self.params['id'], 'profile_city', self.params['city'])
-                    self.message_send(event.user_id, f"Город {name}, id = {self.params['city']}")
+                    self.message_send(event.user_id, f"name: {self.params['name']}\n"
+                                                     f"id: {self.params['id']}\n"
+                                                     f"bdate: {self.params['bdate']}\n"
+                                                     f"sex: {'ж' if self.params['sex'] == 1 else 'м'}\n"
+                                                     f"city: {self.params['city_name']}")
                 # команды для поиска людей и проверки условий поиска
                 elif command == 'условия поиска' and self.params is not None:  # проверка условий поиска
                     if self.search_terms is None:

@@ -1,7 +1,7 @@
 import sqlalchemy as db
 from sqlalchemy.orm import sessionmaker
 
-from models import create_tables, Viewed, ProfileInfo
+from models import create_tables, Viewed
 
 
 class DBLogic:

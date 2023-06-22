@@ -17,25 +17,10 @@ class VkTools:
                      'id': info['id'],
                      'bdate': info.get('bdate'),
                      'sex': info.get('sex'),
-                     'city': info['city']['id']
+                     'city_name': info['city']['title'],
+                     'city_id': info['city']['id'],
                      }
         return user_info
-
-    def checking_client_info(self, params):  # работает, но нужно подумать над сообщениями
-        """
-        уточнение информации о пользователе
-        """
-        info = []
-        if params.get('bdate') is None or len(params['bdate'].split('.')) < 3:
-            info.append('Уточните дату рождения, записав ее в формате ДД.ММ.ГГГГ.')
-        if params.get('sex') is None or params['sex'] == 0:
-            info.append('Уточните свой пол, указав 1, если вы женщина и 2, если в мужчина.')
-        if params.get('city') is None:
-            info.append('Уточните город проживания.')
-        if len(info) != 0:
-            info = '\n'.join(info)
-            return info
-        return None
 
     def formation_search_terms(self, params):
         """
@@ -47,7 +32,7 @@ class VkTools:
                         'age_from': age - 5,
                         'age_to': age + 5,
                         'sex': 1 if params['sex'] == 2 else 2,
-                        'city': params['city'],
+                        'city': params['city_id'],
                         'status': 6,
                         'is_closed': False}
         return search_terms
@@ -61,10 +46,7 @@ class VkTools:
         получение фотографий пользователя из профеля
         """
         photos = sorted(photos, key=lambda x: x['likes']['count']+x['comments']['count'], reverse=True)[0:3]
-        attachment = []
-        for photo in photos:
-            photoss = sorted(photo['sizes'], key=lambda x: (x['height'], x['width'], x['type']), reverse=True)
-            attachment.append(photoss[0]['url'])
+        attachment = [photo['sizes'][-1]['url'] for photo in photos]
         attachment = []  # для тестов
         return ', '.join(attachment)
 
@@ -92,6 +74,9 @@ class VkTools:
         city = self.api.method('database.getCities',
                                {'q': {name[0]},
                                 'need_all': 0})
+        if city['count'] == 0:
+            return None, None
+        print(city)
         if len(name) > 1:
             for c in city['items']:
                 if c.get('region') == name[1].capitalize():
