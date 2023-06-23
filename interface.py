@@ -10,15 +10,15 @@ from command_help import command_help
 
 
 command_not_recognized = 'Команда не распознана'
+user_id = None
 class BotInterface:
     def __init__(self, comunity_token, acces_token):
         self.interface = vk_api.VkApi(token=comunity_token)
         self.api = VkTools(acces_token)
         self.db_logic = DBLogic()  # управление базой данных
         self.longpoll = VkLongPoll(self.interface)
-        self.params = None
+        self.params = {None}
         self.search_terms = None
-        self.offset = 0
 
     def message_send(self, user_id, text, attachment=None):
         self.interface.method('messages.send',
@@ -28,21 +28,8 @@ class BotInterface:
                                'random_id': get_random_id()}
                               )
 
-    def request_for_data_user(self):
-        user_name = None
-        users = self.api.search_users(self.search_terms, self.offset)
-        while user_name is None:
-            if users is False:
-                users = self.api.search_users(self.search_terms, self.offset)
-            user = self.api.enumeration_found_users(users)
-            self.offset += 1
-            if not self.db_logic.getting_verified_id(self.params['id'], user['id']):
-                user_id, user_name, attachment = self.api.data_acquisition_user(user)
-                self.db_logic.viewing(self.params['id'], user_id)
-        return user_id, user_name, attachment
-
-
     def event_handler(self):
+        user_id = None
         for event in self.longpoll.listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                 command = event.text.lower()
@@ -52,7 +39,7 @@ class BotInterface:
                     self.message_send(event.user_id, f'Здравствуте {self.params["name"]}')
 
                     # проверка данных пользователя
-                    if self.params['bdate'] is None:
+                    if re.search(r'^\d{1,2}.\d{1,2}.\d{4}$', str(self.params['bdate'])) is None:
                         self.message_send(event.user_id, 'Введите дату рождения ДД.ММ.ГГГГ')
                         for event in self.longpoll.listen():
                             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
@@ -89,15 +76,14 @@ class BotInterface:
                 elif command == 'поиск' and self.params is not None:
                     if self.search_terms is None:
                         self.search_terms = self.api.formation_search_terms(self.params)
-                    # user_id, user_name, attachment = self.request_for_data_user()
                     user_id, user_name, attachment = self.api.request_for_data_user(event.user_id, search_terms=self.search_terms)
                     self.message_send(event.user_id, f'Встречайте {user_name}'
                                                      f'\nhttps://vk.com/id{user_id}', attachment=attachment)
-                elif command == 'нравится' and self.params is not None:
-                    self.db_logic.mark_user_like(self.params['id'], user_id)
-                    self.message_send(event.user_id, f"{user_id}")
+                elif command == 'нравится' and self.params is not None and user_id is not None:  # исправить ошибку, которая возникнет, если написать нравится до поиска
+                        self.db_logic.mark_user_like(self.params['id'], user_id)
+                        self.message_send(event.user_id, f"Пользователь отмечен")
                 elif command == 'понравившиеся':
-                    list_liked_users = self.getting_list_liked_users_id(event.user_id)
+                    list_liked_users = self.db_logic.getting_list_liked_users(event.user_id)
                     self.message_send(event.user_id, f'{list_liked_users}')
 
                 # команды для проверки личных данных
@@ -115,7 +101,7 @@ class BotInterface:
                                                      f"{self.search_terms.get('age_to')}\n"
                                                      f"Пол: {self.search_terms.get('sex')}\n"
                                                      f"Город: {self.search_terms.get('city_name')}")
-                elif command == 'изменить условия поиска':
+                elif command == 'изменить условия поиска' and self.search_terms is None:
                     self.message_send(event.user_id, 'Введите возраста партнера в формате ??-??')
                     for event in self.longpoll.listen():
                         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
@@ -160,7 +146,7 @@ class BotInterface:
                                     break
                                 self.message_send(event.user_id, command_not_recognized)
 
-                elif command == 'сбросить условия поиска':
+                elif command == 'сбросить условия поиска' and self.search_terms is not None:
                     self.search_terms = None
                 elif command == 'помощь':
                     self.message_send(event.user_id, command_help)

@@ -11,7 +11,6 @@ class DBLogic:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-
     def __del__(self):
         self.session.close()
 
@@ -24,7 +23,7 @@ class DBLogic:
         self.session.add(data)
         self.session.commit()
 
-    def getting_list_liked_users_id(self, profile_id):
+    def getting_list_liked_users(self, profile_id):
         """
         запрашивает id понравившихся пользователей и формирует ссылки на их аккаунты
         """
@@ -45,8 +44,6 @@ class DBLogic:
         """
         отмечает человека, как понравившегося
         """
-        print(profile_id, worksheet_id)
         user_like = self.session.query(Viewed).get([profile_id, worksheet_id])
-        user_like.like = True
         self.session.add(user_like)
         self.session.commit()
