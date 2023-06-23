@@ -11,10 +11,10 @@ class DBLogic:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
+
     def __del__(self):
         self.session.close()
 
-    # Viewing
     def viewing(self, profile_id, user_id):
         """
         заносит просмотренные id в db
@@ -26,11 +26,12 @@ class DBLogic:
 
     def getting_list_liked_users_id(self, profile_id):
         """
-        выводит список id всех понравившихся партнеров
+        запрашивает id понравившихся пользователей и формирует ссылки на их аккаунты
         """
-        list_liked_users_id = [k[0] for k in self.session.query(Viewed.worksheet_id).filter(
+        list_users_id = [k[0] for k in self.session.query(Viewed.worksheet_id).filter(
             Viewed.profile_id == str(profile_id), Viewed.like == str(1)).all()]
-        return list_liked_users_id
+        list_users = [f'https://vk.com/id{user_id}' for user_id in list_users_id]
+        return '\n'.join(list_users)
 
     def getting_verified_id(self, profile_id, user_id):
         """
@@ -49,4 +50,3 @@ class DBLogic:
         user_like.like = True
         self.session.add(user_like)
         self.session.commit()
-

@@ -1,7 +1,5 @@
 import sqlalchemy as sq
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import Session
 
 Base = declarative_base()
 
@@ -19,5 +17,5 @@ class Viewed(Base):
 
 
 def create_tables(engine):
-    #Base.metadata.drop_all(engine)  # удаление всех существующих таблиц
+    Base.metadata.drop_all(engine)  # удаление всех существующих таблиц
     Base.metadata.create_all(engine)  # создание всех существующих таблиц
